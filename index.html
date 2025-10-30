@@ -15,6 +15,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      overflow-x: hidden;
     }
     .container {
       border-radius: 28px;
@@ -23,12 +24,12 @@
       flex-direction: column;
       align-items: center;
       min-width: 320px;
-      max-width: 800px;
+      max-width: 100vw;
       width: 95vw;
       margin: 0 auto;
       background: transparent;
       box-shadow: none;
-      overflow-x: auto;
+      overflow-x: hidden; /* không cho scroll ngang */
     }
     .turn-list {
       display: flex;
@@ -152,10 +153,11 @@
       box-shadow: none;
       border-radius: 0;
       width: 100%;
-      max-width: 100%;
-      overflow-x: auto;
+      max-width: 100vw;
+      overflow-x: hidden !important;
       grid-template-columns: repeat(var(--cols), 160px);
       grid-template-rows: repeat(var(--rows), 160px);
+      transition: transform 0.46s cubic-bezier(.77,0,.22,1);
     }
     .card {
       position: relative;
@@ -243,6 +245,102 @@
       flex-wrap: wrap;
       justify-content: center;
       gap: 10px;
+    }
+    /* Hiệu ứng hoàn chỉnh ảnh */
+    .grid.full-image {
+      animation: fullImageGrow 0.6s cubic-bezier(.83,-0.02,.41,.97);
+      transform: scale(1.09) rotateZ(-0.8deg);
+      box-shadow: 0 23px 60px #80d7ec94, 0 3px 80px #db8aff30;
+      z-index: 2;
+      position: relative;
+      overflow: hidden !important; /* Ẩn thanh scroll khi hoàn thiện */
+    }
+    @keyframes fullImageGrow {
+      0% { filter: blur(5px) brightness(1.15) grayscale(0.3); opacity:0.38; transform: scale(0.95); box-shadow:0 0 0 #fff0;}
+      60%{ filter: blur(1px) brightness(1.08) grayscale(0.15); opacity:1; }
+      100% { filter: none; opacity:1; }
+    }
+    /* Hiệu ứng ghép ảnh hoàn chỉnh đẹp hơn */
+    .full-overlay {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: calc(160px * var(--cols));
+      height: calc(160px * var(--rows));
+      transform: translate(-50%, -50%) scale(1.05);
+      border-radius: 22px;
+      box-shadow: 0 10px 34px #00b6d699, 0 0px 40px #ae6cff66,0 0 0 14px #fff3 inset;
+      z-index: 10;
+      pointer-events: none;
+      overflow: hidden;
+      border: 6px solid #63d5ca;
+      background: linear-gradient(123deg,#6ae2fc22 22%, #f7e4ff22 70%);
+      animation: overlayPop 1.18s cubic-bezier(.7, 0.01, .22, 1.09);
+      box-sizing: border-box;
+    }
+    .full-overlay::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      box-shadow: 0 0 28px 10px #ffeaff77 inset;
+      z-index: 2;
+      border-radius: 26px;
+      pointer-events: none;
+    }
+    .full-overlay img {
+      filter: drop-shadow(0 7px 25px #4cdff878);
+      transition: filter 0.24s;
+    }
+    @keyframes overlayPop {
+      0%   { opacity: 0; transform: translate(-50%,-55%) scale(.85) rotateZ(-3deg); box-shadow:none;}
+      50%  { opacity:.82; }
+      80%  { opacity:1;}
+      100% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+    }
+    .congrats-text {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -220%);
+      color: #fff;
+      font-size: 2.5rem;
+      font-family: 'Baloo 2', Arial, sans-serif;
+      font-weight: bold;
+      padding: 19px 40px 16px 40px;
+      background: linear-gradient(100deg,#86f3ff 30%, #b775fb 80%, #ffe7fb 100%);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-fill-color: transparent;
+      box-shadow: none;
+      border-radius: 30px;
+      z-index: 99;
+      animation: congratsPop 0.95s cubic-bezier(.26,1.57,.61,1.14);
+      text-shadow: 0 5px 21px #d09bf6ba;
+      letter-spacing: 2.2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 13px;
+    }
+    /* Biểu tượng vỗ tay động */
+    .clap {
+      font-size: 2.2rem;
+      animation: clapSpin 1.13s cubic-bezier(.22,1.21,.4,1.11);
+      filter: drop-shadow(0 2px 10px #fdfff6cc);
+      display: inline-block;
+      margin-left: 6px;
+      margin-right: 3px;
+    }
+    @keyframes clapSpin {
+      0%   { transform: rotateZ(-80deg) scale(.33); opacity:0; }
+      53%  { transform: rotateZ(2deg)  scale(.97); opacity:0.94; }
+      100% { transform: rotateZ(0deg)  scale(1.12); opacity:1; }
+    }
+    @keyframes congratsPop {
+      0% { opacity: 0; transform: translate(-50%, -250%) scale(0.8); }
+      55%{ opacity: .9; }
+      100% { opacity: 1; transform: translate(-50%, -210%) scale(1.10); }
     }
     @media (max-width: 600px) {
       .container { max-width: 99vw; min-width: unset; padding: 3vw 1vw; }
@@ -346,9 +444,13 @@
 
     function resetCurrentTurn() {
       setBoardSizeForCurrentTurn();
+      // Loại class nghiêng nếu còn (fix nghiêng khi tạo lại)
+      const gridEl = document.getElementById('grid');
+      if(gridEl) gridEl.classList.remove('full-image');
       createGrid();
       updateTurnIndicator();
       document.getElementById('imgStatus').textContent = turns[currentTurn].img ? ' Ảnh đã tải lên!' : '';
+      showFullImageIfDone();
     }
 
     window.uploadImgAll = function(event) {
@@ -385,12 +487,39 @@
       document.getElementById('imgStatus').textContent = turns[currentTurn].img ? ' Ảnh đã tải lên!' : '';
     }
 
+    function checkAllFlipped() {
+      const all = Array.from(document.querySelectorAll('.card'));
+      return all.length > 0 && all.every(c => c.classList.contains('flipped'));
+    }
+
+    function showFullImageIfDone() {
+      const gridEl = document.getElementById('grid');
+      const fullOverlay = document.getElementById('fullImgOverlay');
+      const img = turns[currentTurn].img;
+      if (checkAllFlipped() && img) {
+        gridEl.classList.add('full-image');
+        if (!document.getElementById('fullImgOverlay')) {
+          const overlay = document.createElement('div');
+          overlay.className = 'full-overlay';
+          overlay.id = 'fullImgOverlay';
+          overlay.innerHTML = `<img src='${img}' style="width:100%;height:100%;object-fit:cover;">
+          <div class='congrats-text'>🎉 Hoàn thành! <span class='clap'>👏🏻</span></div>`;
+          gridEl.appendChild(overlay);
+        }
+      } else {
+        gridEl.classList.remove('full-image');
+        if (fullOverlay) fullOverlay.remove();
+      }
+    }
+
     function flipCard(card) {
       if (!turns[currentTurn].img) {
         alert('Vui lòng upload ảnh trước!');
         return;
       }
       card.classList.toggle('flipped');
+      // Gọi kiểm tra hoàn thành
+      setTimeout(showFullImageIfDone, 200);
     }
 
     function prevTurn() {
@@ -434,6 +563,7 @@
       updateTurnIndicator();
       document.querySelectorAll('.card').forEach(card => { card.classList.remove('flipped'); });
       document.getElementById('imgStatus').textContent = turns[currentTurn].img ? ' Ảnh đã tải lên!' : '';
+      showFullImageIfDone();
     }
 
     document.getElementById('rowInput').addEventListener('input', () => {
