@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trò chơi lật ảnh</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600&family=Montserrat:wght@500&display=swap" rel="stylesheet">
+  <style>
+    html, body { height: 100%; }
+    body {
+      font-family: 'Baloo 2', 'Montserrat', Arial, sans-serif;
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #c5e1fa 0%, #f7e8ff 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .container {
+      border-radius: 28px;
+      padding: 36px 10px 24px 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 320px;
+      max-width: 800px;
+      width: 95vw;
+      margin: 0 auto;
+      background: transparent;
+      box-shadow: none;
+      overflow-x: auto;
+    }
+    .turn-list {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+    }
+    .turn-item {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 2px 9px #bdbaff3b;
+      cursor: pointer;
+      border: 2px solid #d5cfff;
+      font-size: 17px;
+      font-family: 'Montserrat', Arial, sans-serif;
+      color: #325;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: box-shadow 0.16s, border 0.2s;
+      position: relative;
+      z-index: 1;
+      outline: none;
+      user-select: none;
+      margin-top: 2px;
+    }
+    .turn-item.active {
+      background: linear-gradient(135deg, #77c0ff 0%, #a47dfa 100%);
+      color: #fff;
+      box-shadow: 0 7px 22px #7bdfff99;
+      border: 2.5px solid #4e8cff;
+      font-size: 19px;
+      transform: scale(1.07);
+    }
+    .controls {
+      margin-bottom: 13px;
+      text-align: center;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .controls-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      justify-content: center;
+      width: 100%;
+    }
+    .controls label {
+      font-size: 17px;
+      margin-right: 3px;
+      font-family: 'Montserrat', Arial, sans-serif;
+      color: #545;
+    }
+    .controls input[type='number'] {
+      padding: 3px 3px;
+      border-radius: 8px;
+      border: 1.2px solid #b3b2f2;
+      width: 38px;
+      font-size: 17px;
+      background: #fafdff;
+      color: #306;
+      text-align: center;
+    }
+    .controls button, .game-controls button {
+      background: linear-gradient(135deg, #69c9ff 0%, #bb7afb 100%);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 8px 18px;
+      font-family: 'Montserrat', Arial, sans-serif;
+      font-weight: bold;
+      font-size: 17px;
+      margin: 0 2px;
+      cursor: pointer;
+      transition: background 0.18s, box-shadow 0.14s, transform 0.14s;
+      box-shadow: 0 2.5px 12px #59cffb44, 0 0.5px 2.8px #ba91ff25;
+      align-self: center;
+    }
+    .controls button:active, .game-controls button:active {
+      background: linear-gradient(135deg, #49b6f1 30%, #7e51bd 100%);
+      transform: translateY(2px) scale(.98);
+    }
+    .controls button:hover, .game-controls button:hover {
+      background: linear-gradient(135deg, #2eb6ff 0%, #c380ff 100%);
+      box-shadow: 0 10px 36px #38e0fd33;
+    }
+    #imgStatus {
+      display: inline-block;
+      color: #16ac6b;
+      font-size: 15px;
+      margin-left: 2px;
+      font-family: 'Montserrat', Arial, sans-serif;
+    }
+    .turn-indicator {
+      font-size: 16.5px;
+      margin: 6px 0 6px 0;
+      font-weight: 600;
+      color: #676;
+      text-align: center;
+      width: 100%;
+    }
+    /* Lưới căng giữa, co giãn, KHÔNG nền trắng dưới */
+    .grid {
+      display: grid;
+      justify-content: center;
+      align-items: center;
+      gap: 18px;
+      margin: 0 auto 16px auto;
+      padding: 0;
+      background: transparent;
+      box-shadow: none;
+      border-radius: 0;
+      width: 100%;
+      max-width: 100%;
+      overflow-x: auto;
+      grid-template-columns: repeat(var(--cols), 160px);
+      grid-template-rows: repeat(var(--rows), 160px);
+    }
+    .card {
+      position: relative;
+      width: 160px;
+      height: 160px;
+      max-width: 100%;
+      perspective: 950px;
+      cursor: pointer;
+      margin: 0;
+      border-radius: 16px;
+      box-shadow: 0 6px 32px #c8bafa35;
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 25px;
+      overflow: hidden;
+    }
+    .card-inner {
+      transition: transform 0.7s cubic-bezier(.32,1.4,.49,1.01);
+      transform-style: preserve-3d;
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+    }
+    .card.flipped .card-inner {
+      transform: rotateY(180deg) scale(1.01);
+    }
+    .card-front, .card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      background: linear-gradient(135deg, #98d3ed 0%, #e7b8ef 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px #e2daff53;
+      font-size: 21px;
+    }
+    .card-front { gap: 0px; }
+    .card-number {
+      font-size: 22px;
+      font-weight: bold;
+      color: #6d17a6;
+      letter-spacing: 2px;
+      background: #fff4;
+      border-radius: 5px;
+      padding: 2px 8px;
+      margin-bottom: 6px;
+      text-shadow: 1.6px 1.6px 4px #fff9,0.5px 1px 2.9px #b6b5bb66;
+      box-shadow: 0 1.2px 3.5px #dbb6f13d;
+      opacity: .84;
+    }
+    .card-front span:last-child {
+      font-size: 25px;
+      color: #3a4e93;
+      font-family: 'Baloo 2', Arial, sans-serif;
+      filter: drop-shadow(0 2px 8px #a8d8fe88);
+    }
+    .card-back {
+      background: #fff;
+      transform: rotateY(180deg);
+      overflow: hidden; /* fix scroll bug khi lật ảnh */
+      padding: 0;
+    }
+    .card-back img {
+      width: calc(160px * var(--cols));
+      height: calc(160px * var(--rows));
+      object-fit: cover;
+      position: absolute;
+      left: 0;
+      top: 0;
+      border-radius: 0;
+      box-shadow: 0 1px 5px #c998ff2a;
+    }
+    .game-controls {
+      margin-top: 14px;
+      text-align: center;
+      width: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+    @media (max-width: 600px) {
+      .container { max-width: 99vw; min-width: unset; padding: 3vw 1vw; }
+      .card, .card-back img { width: 28vw; height: 28vw; min-width: 70px; min-height: 70px; max-width: 99vw; max-height: 99vw;}
+      .card-back img { min-width: 70px; min-height: 70px; }
+      .grid { gap: 3vw; grid-template-columns: repeat(var(--cols), 28vw); grid-template-rows: repeat(var(--rows), 28vw);}
+      .turn-item { width: 30px; height: 30px; font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="turn-list" id="turnList"></div>
+    <div class="controls">
+      <div class="controls-row">
+        <label>Số lượng ô (Hàng x Cột):
+          <input id="rowInput" type="number" min="2" max="8" value="2"> x
+          <input id="colInput" type="number" min="2" max="8" value="2">
+        </label>
+        <button onclick="resetCurrentTurn()">Tạo lại bàn chơi</button>
+      </div>
+      <div class="controls-row">
+        <input type="file" accept="image/*" id="fileAll" style="display:none" onchange="uploadImgAll(event)" />
+        <button type="button" onclick="document.getElementById('fileAll').click();">Upload ảnh cho lượt này</button>
+        <span id="imgStatus"></span>
+      </div>
+    </div>
+    <div class="turn-indicator">
+      Lượt hiện tại: <span id="turnNumber">1</span> / <span id="totalTurns">1</span>
+    </div>
+    <div id="grid" class="grid"></div>
+    <div class="game-controls">
+      <button onclick="prevTurn()">⬅ Lượt trước</button>
+      <button onclick="nextTurn()">Lượt tiếp theo ➡</button>
+      <button onclick="addTurn()">+ Thêm lượt</button>
+      <button onclick="deleteTurn()" style="background:linear-gradient(135deg, #ff6060 30%, #df4aad 100%)">🗑 Xóa lượt</button>
+    </div>
+  </div>
+  <script>
+    let rows = 2;
+    let cols = 2;
+    let turns = [{ img: null, rows: 2, cols: 2 }];
+    let currentTurn = 0;
+
+    function updateTurnIndicator() {
+      document.getElementById('turnNumber').innerText = currentTurn + 1;
+      document.getElementById('totalTurns').innerText = turns.length;
+      renderTurnList();
+    }
+
+    function renderTurnList() {
+      const turnList = document.getElementById('turnList');
+      turnList.innerHTML = '';
+      turns.forEach((t, i) => {
+        const item = document.createElement('div');
+        item.className = 'turn-item' + (i === currentTurn ? ' active' : '');
+        item.innerText = i+1;
+        item.title = t.img ? 'Đã upload ảnh.' : 'Chưa có ảnh.';
+        item.tabIndex = 0;
+        item.onclick = () => { currentTurn = i; applyTurn(); };
+        item.onkeydown = (e) => {if(e.key==='Enter'||e.key===' '){currentTurn = i; applyTurn();}};
+        turnList.appendChild(item);
+      });
+    }
+
+    function createGrid() {
+      const gridEl = document.getElementById('grid');
+      rows = turns[currentTurn].rows;
+      cols = turns[currentTurn].cols;
+      gridEl.innerHTML = '';
+      gridEl.style.setProperty('--rows', rows);
+      gridEl.style.setProperty('--cols', cols);
+      // Các dòng sau sẽ cập nhật grid-template-columns/rows = repeat(cols, 85px), luôn fit theo số cột, căn giữa:
+      gridEl.style.gridTemplateColumns = `repeat(${cols}, 160px)`;
+      gridEl.style.gridTemplateRows = `repeat(${rows}, 160px)`;
+      for (let i = 0; i < rows * cols; i++) {
+        const r = Math.floor(i / cols);
+        const c = i % cols;
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.dataset.idx = i;
+        card.innerHTML = `
+          <div class=\"card-inner\">
+            <div class=\"card-front\">
+              <span class=\"card-number\">${i+1}</span>
+              <span>?</span>
+            </div>
+            <div class=\"card-back\"></div>
+          </div>
+        `;
+        card.onclick = function () {flipCard(card, r, c)};
+        gridEl.appendChild(card);
+      }
+      if(turns[currentTurn].img) updateAllCards();
+    }
+
+    function setBoardSizeForCurrentTurn() {
+      turns[currentTurn].rows = parseInt(document.getElementById('rowInput').value);
+      turns[currentTurn].cols = parseInt(document.getElementById('colInput').value);
+    }
+
+    function resetCurrentTurn() {
+      setBoardSizeForCurrentTurn();
+      createGrid();
+      updateTurnIndicator();
+      document.getElementById('imgStatus').textContent = turns[currentTurn].img ? ' Ảnh đã tải lên!' : '';
+    }
+
+    window.uploadImgAll = function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        turns[currentTurn].img = e.target.result;
+        document.getElementById('imgStatus').textContent = ' Ảnh đã tải lên!';
+        updateAllCards();
+      };
+      reader.readAsDataURL(file);
+    };
+
+    function updateAllCards() {
+      const cols = turns[currentTurn].cols;
+      const rows = turns[currentTurn].rows;
+      document.querySelectorAll('.card').forEach((card, i) => {
+        const r = Math.floor(i / cols);
+        const c = i % cols;
+        const back = card.querySelector('.card-back');
+        const img = turns[currentTurn].img;
+        if (img) {
+          back.innerHTML = `<img src='${img}' style="
+            left: -${c * 160}px;
+            top: -${r * 160}px;
+            width: ${cols * 160}px;
+            height: ${rows * 160}px;
+          " alt='Ảnh chung'/>`;
+        } else {
+          back.innerHTML = '';
+        }
+      });
+      document.getElementById('imgStatus').textContent = turns[currentTurn].img ? ' Ảnh đã tải lên!' : '';
+    }
+
+    function flipCard(card) {
+      if (!turns[currentTurn].img) {
+        alert('Vui lòng upload ảnh trước!');
+        return;
+      }
+      card.classList.toggle('flipped');
+    }
+
+    function prevTurn() {
+      if (currentTurn > 0) {
+        currentTurn--;
+        applyTurn();
+      }
+    }
+
+    function nextTurn() {
+      if (currentTurn === turns.length - 1) {
+        addTurn();
+      } else if (currentTurn < turns.length - 1) {
+        currentTurn++;
+        applyTurn();
+      }
+    }
+
+    function addTurn() {
+      const currentInfo = turns[currentTurn];
+      const newTurn = { img: null, rows: currentInfo.rows, cols: currentInfo.cols };
+      turns.splice(currentTurn + 1, 0, newTurn);
+      currentTurn++;
+      applyTurn();
+    }
+
+    function deleteTurn() {
+      if (turns.length <= 1) {
+        alert('Phải giữ ít nhất một lượt!');
+        return;
+      }
+      turns.splice(currentTurn, 1);
+      if (currentTurn >= turns.length) currentTurn = turns.length - 1;
+      applyTurn();
+    }
+
+    function applyTurn() {
+      document.getElementById('rowInput').value = turns[currentTurn].rows;
+      document.getElementById('colInput').value = turns[currentTurn].cols;
+      createGrid();
+      updateTurnIndicator();
+      document.querySelectorAll('.card').forEach(card => { card.classList.remove('flipped'); });
+      document.getElementById('imgStatus').textContent = turns[currentTurn].img ? ' Ảnh đã tải lên!' : '';
+    }
+
+    document.getElementById('rowInput').addEventListener('input', () => {
+      setBoardSizeForCurrentTurn();
+      resetCurrentTurn();
+    });
+    document.getElementById('colInput').addEventListener('input', () => {
+      setBoardSizeForCurrentTurn();
+      resetCurrentTurn();
+    });
+
+    createGrid();
+    updateTurnIndicator();
+  </script>
+</body>
+</html>
