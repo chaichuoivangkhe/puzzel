@@ -1,600 +1,809 @@
 <!DOCTYPE html>
 <html lang="vi">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Trò chơi lật ảnh</title>
-  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600&family=Montserrat:wght@500&display=swap" rel="stylesheet">
-  <style>
-    html, body { height: 100%; }
-    body {
-      font-family: 'Baloo 2', 'Montserrat', Arial, sans-serif;
-      margin: 0;
-      min-height: 100vh;
-      background: linear-gradient(135deg, #c5e1fa 0%, #f7e8ff 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow-x: hidden;
-    }
-    .container {
-      border-radius: 28px;
-      padding: 36px 5px 20px 5px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-width: 320px;
-      max-width: 100vw;
-      width: 100vw;
-      margin: 0 auto;
-      background: transparent;
-      box-shadow: none;
-      overflow-x: hidden;
-    }
-    .turn-list {
-      display: flex;
-      gap: 14px;
-      margin-bottom: 14px;
-      flex-wrap: wrap;
-      justify-content: center;
-      width: 100%;
-    }
-    .turn-item {
-      width: 46px;
-      height: 46px;
-      border-radius: 50%;
-      background: #fff;
-      box-shadow: 0 2px 9px #bdbaff3b;
-      cursor: pointer;
-      border: 2px solid #d5cfff;
-      font-size: 17px;
-      font-family: 'Montserrat', Arial, sans-serif;
-      color: #325;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: box-shadow 0.16s, border 0.2s;
-      position: relative;
-      z-index: 1;
-      outline: none;
-      user-select: none;
-      margin-top: 2px;
-    }
-    .turn-item.active {
-      background: linear-gradient(135deg, #77c0ff 0%, #a47dfa 100%);
-      color: #fff;
-      box-shadow: 0 7px 22px #7bdfff99;
-      border: 2.5px solid #4e8cff;
-      font-size: 19px;
-      transform: scale(1.07);
-    }
-    .controls {
-      margin-bottom: 13px;
-      text-align: center;
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-    }
-    .controls-row {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 8px;
-      justify-content: center;
-      width: 100%;
-    }
-    .controls label {
-      font-size: 17px;
-      margin-right: 3px;
-      font-family: 'Montserrat', Arial, sans-serif;
-      color: #545;
-    }
-    .controls input[type='number'] {
-      padding: 3px 3px;
-      border-radius: 8px;
-      border: 1.2px solid #b3b2f2;
-      width: 38px;
-      font-size: 17px;
-      background: #fafdff;
-      color: #306;
-      text-align: center;
-    }
-    .controls button, .game-controls button {
-      background: linear-gradient(135deg, #69c9ff 0%, #bb7afb 100%);
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      padding: 8px 18px;
-      font-family: 'Montserrat', Arial, sans-serif;
-      font-weight: bold;
-      font-size: 17px;
-      margin: 0 2px;
-      cursor: pointer;
-      transition: background 0.18s, box-shadow 0.14s, transform 0.14s;
-      box-shadow: 0 2.5px 12px #59cffb44, 0 0.5px 2.8px #ba91ff25;
-      align-self: center;
-    }
-    .controls button:active, .game-controls button:active {
-      background: linear-gradient(135deg, #49b6f1 30%, #7e51bd 100%);
-      transform: translateY(2px) scale(.98);
-    }
-    .controls button:hover, .game-controls button:hover {
-      background: linear-gradient(135deg, #2eb6ff 0%, #c380ff 100%);
-      box-shadow: 0 10px 36px #38e0fd33;
-    }
-    #imgStatus {
-      display: inline-block;
-      color: #16ac6b;
-      font-size: 15px;
-      margin-left: 2px;
-      font-family: 'Montserrat', Arial, sans-serif;
-    }
-    .turn-indicator {
-      font-size: 16.5px;
-      margin: 6px 0 6px 0;
-      font-weight: 600;
-      color: #676;
-      text-align: center;
-      width: 100%;
-    }
-    /* Lưới căng giữa, co giãn, KHÔNG nền trắng dưới */
-    .grid {
-      display: grid;
-      justify-content: center;
-      align-items: center;
-      gap: 2.8vw;
-      background: transparent;
-      box-shadow: none;
-      border-radius: 0;
-      width: 100%;
-      max-width: 100vw;
-      overflow-x: hidden !important;
-      grid-template-columns: repeat(var(--cols), minmax(56px, var(--cardSize, 1fr)));
-      grid-template-rows: repeat(var(--rows), minmax(56px, var(--cardSize, 1fr)));
-      transition: transform 0.46s cubic-bezier(.77,0,.22,1);
-    }
-    .card {
-      position: relative;
-      width: var(--cardSize, 120px);
-      height: var(--cardSize, 120px);
-      max-width: 100vw;
-      perspective: 900px;
-      cursor: pointer;
-      margin: 0;
-      border-radius: 16px;
-      box-shadow: 0 4px 18px #c8bafa1d;
-      background: transparent;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2vw;
-      overflow: hidden;
-    }
-    .card-inner {
-      transition: transform 0.7s cubic-bezier(.32,1.4,.49,1.01);
-      transform-style: preserve-3d;
-      position: relative;
-      width: 100%;
-      height: 100%;
-      border-radius: 12px;
-    }
-    .card.flipped .card-inner {
-      transform: rotateY(180deg) scale(1.01);
-    }
-    .card-front, .card-back {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      backface-visibility: hidden;
-      background: linear-gradient(135deg, #98d3ed 0%, #e7b8ef 100%);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      border-radius: 12px;
-      box-shadow: 0 2px 10px #e2daff53;
-      font-size: 21px;
-    }
-    .card-front { gap: 0px; }
-    .card-number {
-      font-size: 22px;
-      font-weight: bold;
-      color: #6d17a6;
-      letter-spacing: 2px;
-      background: #fff4;
-      border-radius: 5px;
-      padding: 2px 8px;
-      margin-bottom: 6px;
-      text-shadow: 1.6px 1.6px 4px #fff9,0.5px 1px 2.9px #b6b5bb66;
-      box-shadow: 0 1.2px 3.5px #dbb6f13d;
-      opacity: .84;
-    }
-    .card-front span:last-child {
-      font-size: 25px;
-      color: #3a4e93;
-      font-family: 'Baloo 2', Arial, sans-serif;
-      filter: drop-shadow(0 2px 8px #a8d8fe88);
-    }
-    .card-back {
-      background: #fff;
-      transform: rotateY(180deg);
-      overflow: hidden; /* fix scroll bug khi lật ảnh */
-      padding: 0;
-    }
-    .card-back img {
-      width: calc(var(--cardSize, 120px) * var(--cols));
-      height: calc(var(--cardSize, 120px) * var(--rows));
-      object-fit: cover;
-      position: absolute;
-      left: 0;
-      top: 0;
-      border-radius: 0;
-      box-shadow: 0 1px 5px #c998ff2a;
-    }
-    .game-controls {
-      margin-top: 14px;
-      text-align: center;
-      width: 100%;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 10px;
-    }
-    /* Hiệu ứng hoàn chỉnh ảnh */
-    .grid.full-image {
-      animation: fullImageGrow 0.6s cubic-bezier(.83,-0.02,.41,.97);
-      transform: scale(1.09) rotateZ(-0.8deg);
-      box-shadow: 0 23px 60px #80d7ec94, 0 3px 80px #db8aff30;
-      z-index: 2;
-      position: relative;
-      overflow: hidden !important; /* Ẩn thanh scroll khi hoàn thiện */
-    }
-    @keyframes fullImageGrow {
-      0% { filter: blur(5px) brightness(1.15) grayscale(0.3); opacity:0.38; transform: scale(0.95); box-shadow:0 0 0 #fff0;}
-      60%{ filter: blur(1px) brightness(1.08) grayscale(0.15); opacity:1; }
-      100% { filter: none; opacity:1; }
-    }
-    /* Hiệu ứng ghép ảnh hoàn chỉnh đẹp hơn */
-    .full-overlay {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      width: calc(160px * var(--cols));
-      height: calc(160px * var(--rows));
-      transform: translate(-50%, -50%) scale(1.05);
-      border-radius: 22px;
-      box-shadow: 0 10px 34px #00b6d699, 0 0px 40px #ae6cff66,0 0 0 14px #fff3 inset;
-      z-index: 10;
-      pointer-events: none;
-      overflow: hidden;
-      border: 6px solid #63d5ca;
-      background: linear-gradient(123deg,#6ae2fc22 22%, #f7e4ff22 70%);
-      animation: overlayPop 1.18s cubic-bezier(.7, 0.01, .22, 1.09);
-      box-sizing: border-box;
-    }
-    .full-overlay::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      box-shadow: 0 0 28px 10px #ffeaff77 inset;
-      z-index: 2;
-      border-radius: 26px;
-      pointer-events: none;
-    }
-    .full-overlay img {
-      filter: drop-shadow(0 7px 25px #4cdff878);
-      transition: filter 0.24s;
-    }
-    @keyframes overlayPop {
-      0%   { opacity: 0; transform: translate(-50%,-55%) scale(.85) rotateZ(-3deg); box-shadow:none;}
-      50%  { opacity:.82; }
-      80%  { opacity:1;}
-      100% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
-    }
-    .congrats-text {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -220%);
-      color: #fff;
-      font-size: 2.5rem;
-      font-family: 'Baloo 2', Arial, sans-serif;
-      font-weight: bold;
-      padding: 19px 40px 16px 40px;
-      background: linear-gradient(100deg,#86f3ff 30%, #b775fb 80%, #ffe7fb 100%);
-      background-clip: text;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      text-fill-color: transparent;
-      box-shadow: none;
-      border-radius: 30px;
-      z-index: 99;
-      animation: congratsPop 0.95s cubic-bezier(.26,1.57,.61,1.14);
-      text-shadow: 0 5px 21px #d09bf6ba;
-      letter-spacing: 2.2px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 13px;
-    }
-    /* Biểu tượng vỗ tay động */
-    .clap {
-      font-size: 2.2rem;
-      animation: clapSpin 1.13s cubic-bezier(.22,1.21,.4,1.11);
-      filter: drop-shadow(0 2px 10px #fdfff6cc);
-      display: inline-block;
-      margin-left: 6px;
-      margin-right: 3px;
-    }
-    @keyframes clapSpin {
-      0%   { transform: rotateZ(-80deg) scale(.33); opacity:0; }
-      53%  { transform: rotateZ(2deg)  scale(.97); opacity:0.94; }
-      100% { transform: rotateZ(0deg)  scale(1.12); opacity:1; }
-    }
-    @keyframes congratsPop {
-      0% { opacity: 0; transform: translate(-50%, -250%) scale(0.8); }
-      55%{ opacity: .9; }
-      100% { opacity: 1; transform: translate(-50%, -210%) scale(1.10); }
-    }
-    @media (max-width: 1024px) {
-      .card {
-        --cardSize: 12vw;
-        font-size: 2.8vw;
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Trò chơi lật ảnh</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600&family=Montserrat:wght@500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      html,
+      body {
+        height: 100%;
       }
-      .grid {
-        gap: 2.2vw;
+      body {
+        font-family: "Baloo 2", "Montserrat", Arial, sans-serif;
+        margin: 0;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #c5e1fa 0%, #f7e8ff 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow-x: hidden;
       }
-    }
-    @media (max-width: 700px) {
       .container {
-        padding: 7vw 2vw 3vw 2vw;
+        border-radius: 28px;
+        padding: 36px 5px 20px 5px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 320px;
+        max-width: 100vw;
+        width: 100vw;
+        margin: 0 auto;
+        background: transparent;
+        box-shadow: none;
+        overflow-x: hidden;
+      }
+      .turn-list {
+        display: flex;
+        gap: 14px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+        justify-content: center;
+        width: 100%;
+      }
+      .turn-item {
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 2px 9px #bdbaff3b;
+        cursor: pointer;
+        border: 2px solid #d5cfff;
+        font-size: 17px;
+        font-family: "Montserrat", Arial, sans-serif;
+        color: #325;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: box-shadow 0.16s, border 0.2s;
+        position: relative;
+        z-index: 1;
+        outline: none;
+        user-select: none;
+        margin-top: 2px;
+      }
+      .turn-item.active {
+        background: linear-gradient(135deg, #77c0ff 0%, #a47dfa 100%);
+        color: #fff;
+        box-shadow: 0 7px 22px #7bdfff99;
+        border: 2.5px solid #4e8cff;
+        font-size: 19px;
+        transform: scale(1.07);
+      }
+      .controls {
+        margin-bottom: 13px;
+        text-align: center;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+      }
+      .controls-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        justify-content: center;
+        width: 100%;
+      }
+      .controls label {
+        font-size: 17px;
+        margin-right: 3px;
+        font-family: "Montserrat", Arial, sans-serif;
+        color: #545;
+      }
+      .controls input[type="number"] {
+        padding: 3px 3px;
+        border-radius: 8px;
+        border: 1.2px solid #b3b2f2;
+        width: 38px;
+        font-size: 17px;
+        background: #fafdff;
+        color: #306;
+        text-align: center;
+      }
+      .controls button,
+      .game-controls button {
+        background: linear-gradient(135deg, #69c9ff 0%, #bb7afb 100%);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        padding: 8px 18px;
+        font-family: "Montserrat", Arial, sans-serif;
+        font-weight: bold;
+        font-size: 17px;
+        margin: 0 2px;
+        cursor: pointer;
+        transition: background 0.18s, box-shadow 0.14s, transform 0.14s;
+        box-shadow: 0 2.5px 12px #59cffb44, 0 0.5px 2.8px #ba91ff25;
+        align-self: center;
+      }
+      .controls button:active,
+      .game-controls button:active {
+        background: linear-gradient(135deg, #49b6f1 30%, #7e51bd 100%);
+        transform: translateY(2px) scale(0.98);
+      }
+      .controls button:hover,
+      .game-controls button:hover {
+        background: linear-gradient(135deg, #2eb6ff 0%, #c380ff 100%);
+        box-shadow: 0 10px 36px #38e0fd33;
+      }
+      #imgStatus {
+        display: inline-block;
+        color: #16ac6b;
+        font-size: 15px;
+        margin-left: 2px;
+        font-family: "Montserrat", Arial, sans-serif;
+      }
+      .turn-indicator {
+        font-size: 16.5px;
+        margin: 6px 0 6px 0;
+        font-weight: 600;
+        color: #676;
+        text-align: center;
+        width: 100%;
+      }
+      /* Lưới căng giữa, co giãn, KHÔNG nền trắng dưới */
+      .grid {
+        display: grid;
+        justify-content: center;
+        align-items: center;
+        /* Slight gap between tiles for visual separation */
+        gap: 5px;
+        background: transparent;
+        box-shadow: none;
+        border-radius: 0;
+        width: 100%;
+        max-width: 100vw;
+        overflow-x: hidden !important;
+        grid-template-columns: repeat(
+          var(--cols),
+          minmax(56px, var(--cardSize, 1fr))
+        );
+        grid-template-rows: repeat(
+          var(--rows),
+          minmax(56px, var(--cardSize, 1fr))
+        );
+        transition: transform 0.46s cubic-bezier(0.77, 0, 0.22, 1);
       }
       .card {
-        --cardSize: 15vw;
-        font-size: 3.2vw;
-        min-width: 56px; min-height: 56px;
+        position: relative;
+        width: var(--cardSize, 120px);
+        height: var(--cardSize, 120px);
+        max-width: 100vw;
+        perspective: 900px;
+        cursor: pointer;
+        margin: 0;
+        border-radius: 16px;
+        box-shadow: 0 4px 18px #c8bafa1d;
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2vw;
+        overflow: hidden;
+        /* Hint to browser to promote to composite layer for smoother transforms */
+        transform: translateZ(0);
       }
-      .card-back img { min-width: 56px; min-height: 56px; }
-      .grid { gap: 2vw; }
-    }
-    @media (max-width: 500px) {
-      .container { padding: 9vw 1vw 2vw 1vw; }
-      .card, .card-back img { --cardSize: 21vw; font-size: 4vw; min-width: 46px; min-height: 46px; max-width: 99vw; max-height: 99vw;}
-      .card-back img { min-width: 46px; min-height: 46px; }
-      .grid { gap: 1.3vw; }
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="turn-list" id="turnList"></div>
-    <div class="controls">
-      <div class="controls-row">
-        <label>Số lượng ô (Hàng x Cột):
-          <input id="rowInput" type="number" min="2" max="8" value="2"> x
-          <input id="colInput" type="number" min="2" max="8" value="2">
-        </label>
-        <button onclick="resetCurrentTurn()">Tạo lại bàn chơi</button>
+      .card-inner {
+        transition: transform 0.7s cubic-bezier(0.32, 1.4, 0.49, 1.01);
+        transform-style: preserve-3d;
+        position: relative;
+        width: 100%;
+        height: 100%;
+        border-radius: 12px;
+        /* will-change helps browsers optimize the flip animation */
+        will-change: transform;
+      }
+      .card.flipped .card-inner {
+        transform: rotateY(180deg) scale(1.01);
+      }
+      .card-front,
+      .card-back {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        backface-visibility: hidden;
+        background: linear-gradient(135deg, #98d3ed 0%, #e7b8ef 100%);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px #e2daff53;
+        font-size: 21px;
+      }
+      .card-front {
+        gap: 0px;
+      }
+      .card-number {
+        font-size: 22px;
+        font-weight: bold;
+        color: #6d17a6;
+        letter-spacing: 2px;
+        background: #fff4;
+        border-radius: 5px;
+        padding: 2px 8px;
+        margin-bottom: 6px;
+        text-shadow: 1.6px 1.6px 4px #fff9, 0.5px 1px 2.9px #b6b5bb66;
+        box-shadow: 0 1.2px 3.5px #dbb6f13d;
+        opacity: 0.84;
+      }
+      .card-front span:last-child {
+        font-size: 25px;
+        color: #3a4e93;
+        font-family: "Baloo 2", Arial, sans-serif;
+        filter: drop-shadow(0 2px 8px #a8d8fe88);
+      }
+      .card-back {
+        background: #fff;
+        transform: rotateY(180deg);
+        overflow: hidden; /* fix scroll bug khi lật ảnh */
+        padding: 0;
+      }
+      .card-back img {
+        width: calc(var(--cardSize, 120px) * var(--cols));
+        height: calc(var(--cardSize, 120px) * var(--rows));
+        object-fit: cover;
+        position: absolute;
+        left: 0;
+        top: 0;
+        border-radius: 0;
+        box-shadow: 0 1px 5px #c998ff2a;
+      }
+      .game-controls {
+        margin-top: 14px;
+        text-align: center;
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+      }
+      /* Hiệu ứng hoàn chỉnh ảnh */
+      .grid.full-image {
+        animation: fullImageGrow 0.6s cubic-bezier(0.83, -0.02, 0.41, 0.97);
+        transform: scale(1.09) rotateZ(-0.8deg);
+        /* Avoid animating heavy box-shadow (expensive). Keep a subtle elevation only. */
+        box-shadow: 0 8px 26px #80d7ec55;
+        z-index: 2;
+        position: relative;
+        overflow: hidden !important; /* Ẩn thanh scroll khi hoàn thiện */
+      }
+      .full-overlay {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: calc(160px * var(--cols));
+        height: calc(160px * var(--rows));
+        transform: translate(-50%, -55%) scale(0.96);
+        opacity: 0;
+        pointer-events: none;
+        transition: transform 0.52s cubic-bezier(0.22, 1, 0.36, 1),
+          opacity 0.48s cubic-bezier(0.22, 1, 0.36, 1);
+        will-change: transform, opacity;
+        z-index: 10;
+        border-radius: 18px;
+        overflow: hidden;
+        box-sizing: border-box;
+        /* subtle border for the overlay */
+        border: 4px solid rgba(99, 213, 202, 0.25);
+        background: linear-gradient(123deg, #6ae2fc11 22%, #f7e4ff11 70%);
+      }
+      .full-overlay.visible {
+        transform: translate(-50%, -50%) scale(1.03);
+        opacity: 1;
+      }
+      @keyframes fullImageGrow {
+        0% {
+          filter: blur(5px) brightness(1.15) grayscale(0.3);
+          opacity: 0.38;
+          transform: scale(0.95);
+          box-shadow: 0 0 0 #fff0;
+        }
+        60% {
+          filter: blur(1px) brightness(1.08) grayscale(0.15);
+          opacity: 1;
+        }
+        100% {
+          filter: none;
+          opacity: 1;
+        }
+      }
+      /* Hiệu ứng ghép ảnh hoàn chỉnh đẹp hơn */
+      .full-overlay {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: calc(160px * var(--cols));
+        height: calc(160px * var(--rows));
+        transform: translate(-50%, -50%) scale(1.05);
+        border-radius: 22px;
+        box-shadow: 0 10px 34px #00b6d699, 0 0px 40px #ae6cff66,
+          0 0 0 14px #fff3 inset;
+        z-index: 10;
+        pointer-events: none;
+        overflow: hidden;
+        border: 6px solid #63d5ca;
+        background: linear-gradient(123deg, #6ae2fc22 22%, #f7e4ff22 70%);
+        animation: overlayPop 1.18s cubic-bezier(0.7, 0.01, 0.22, 1.09);
+        box-sizing: border-box;
+      }
+      .full-overlay::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        box-shadow: 0 0 28px 10px #ffeaff77 inset;
+        z-index: 2;
+        border-radius: 26px;
+        pointer-events: none;
+      }
+      .full-overlay img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        backface-visibility: hidden;
+        will-change: transform, opacity;
+      }
+      @keyframes overlayPop {
+        0% {
+          opacity: 0;
+          transform: translate(-50%, -55%) scale(0.85) rotateZ(-3deg);
+          box-shadow: none;
+        }
+        50% {
+          opacity: 0.82;
+        }
+        80% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 1;
+          transform: translate(-50%, -50%) scale(1.05);
+        }
+      }
+      .congrats-text {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -220%);
+        color: #fff;
+        font-size: 2.5rem;
+        font-family: "Baloo 2", Arial, sans-serif;
+        font-weight: bold;
+        padding: 19px 40px 16px 40px;
+        background: linear-gradient(
+          100deg,
+          #86f3ff 30%,
+          #b775fb 80%,
+          #ffe7fb 100%
+        );
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-fill-color: transparent;
+        box-shadow: none;
+        border-radius: 30px;
+        z-index: 99;
+        animation: congratsPop 0.95s cubic-bezier(0.26, 1.57, 0.61, 1.14);
+        text-shadow: 0 5px 21px #d09bf6ba;
+        letter-spacing: 2.2px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 13px;
+      }
+      /* Biểu tượng vỗ tay động */
+      .clap {
+        font-size: 2.2rem;
+        animation: clapSpin 1.13s cubic-bezier(0.22, 1.21, 0.4, 1.11);
+        filter: drop-shadow(0 2px 10px #fdfff6cc);
+        display: inline-block;
+        margin-left: 6px;
+        margin-right: 3px;
+      }
+      @keyframes clapSpin {
+        0% {
+          transform: rotateZ(-80deg) scale(0.33);
+          opacity: 0;
+        }
+        53% {
+          transform: rotateZ(2deg) scale(0.97);
+          opacity: 0.94;
+        }
+        100% {
+          transform: rotateZ(0deg) scale(1.12);
+          opacity: 1;
+        }
+      }
+      @keyframes congratsPop {
+        0% {
+          opacity: 0;
+          transform: translate(-50%, -250%) scale(0.8);
+        }
+        55% {
+          opacity: 0.9;
+        }
+        100% {
+          opacity: 1;
+          transform: translate(-50%, -210%) scale(1.1);
+        }
+      }
+      @media (max-width: 1024px) {
+        .card {
+          --cardSize: 12vw;
+          font-size: 2.8vw;
+        }
+        /* slight gap on narrower screens */
+        .grid {
+          gap: 5px;
+        }
+      }
+      @media (max-width: 700px) {
+        .container {
+          padding: 7vw 2vw 3vw 2vw;
+        }
+        .card {
+          --cardSize: 15vw;
+          font-size: 3.2vw;
+          min-width: 56px;
+          min-height: 56px;
+        }
+        .card-back img {
+          min-width: 56px;
+          min-height: 56px;
+        }
+        /* mobile-ish: small gap */
+        .grid {
+          gap: 5px;
+        }
+      }
+      @media (max-width: 500px) {
+        .container {
+          padding: 9vw 1vw 2vw 1vw;
+        }
+        .card,
+        .card-back img {
+          --cardSize: 21vw;
+          font-size: 4vw;
+          min-width: 46px;
+          min-height: 46px;
+          max-width: 99vw;
+          max-height: 99vw;
+        }
+        .card-back img {
+          min-width: 46px;
+          min-height: 46px;
+        }
+        /* smallest screens: small gap */
+        .grid {
+          gap: 5px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="turn-list" id="turnList"></div>
+      <div class="controls">
+        <div class="controls-row">
+          <label
+            >Số lượng ô (Hàng x Cột):
+            <input id="rowInput" type="number" min="2" max="8" value="2" /> x
+            <input id="colInput" type="number" min="2" max="8" value="2" />
+          </label>
+          <button onclick="resetCurrentTurn()">Tạo lại bàn chơi</button>
+        </div>
+        <div class="controls-row">
+          <input
+            type="file"
+            accept="image/*"
+            id="fileAll"
+            style="display: none"
+            onchange="uploadImgAll(event)"
+          />
+          <button
+            type="button"
+            onclick="document.getElementById('fileAll').click();"
+          >
+            Upload ảnh cho lượt này
+          </button>
+          <span id="imgStatus"></span>
+        </div>
       </div>
-      <div class="controls-row">
-        <input type="file" accept="image/*" id="fileAll" style="display:none" onchange="uploadImgAll(event)" />
-        <button type="button" onclick="document.getElementById('fileAll').click();">Upload ảnh cho lượt này</button>
-        <span id="imgStatus"></span>
+      <div class="turn-indicator">
+        Lượt hiện tại: <span id="turnNumber">1</span> /
+        <span id="totalTurns">1</span>
+      </div>
+      <div id="grid" class="grid"></div>
+      <div class="game-controls">
+        <button onclick="prevTurn()">⬅ Lượt trước</button>
+        <button onclick="nextTurn()">Lượt tiếp theo ➡</button>
+        <button onclick="addTurn()">+ Thêm lượt</button>
+        <button
+          onclick="deleteTurn()"
+          style="background: linear-gradient(135deg, #ff6060 30%, #df4aad 100%)"
+        >
+          🗑 Xóa lượt
+        </button>
       </div>
     </div>
-    <div class="turn-indicator">
-      Lượt hiện tại: <span id="turnNumber">1</span> / <span id="totalTurns">1</span>
-    </div>
-    <div id="grid" class="grid"></div>
-    <div class="game-controls">
-      <button onclick="prevTurn()">⬅ Lượt trước</button>
-      <button onclick="nextTurn()">Lượt tiếp theo ➡</button>
-      <button onclick="addTurn()">+ Thêm lượt</button>
-      <button onclick="deleteTurn()" style="background:linear-gradient(135deg, #ff6060 30%, #df4aad 100%)">🗑 Xóa lượt</button>
-    </div>
-  </div>
-  <script>
-    let rows = 2;
-    let cols = 2;
-    let turns = [{ img: null, rows: 2, cols: 2 }];
-    let currentTurn = 0;
+    <script>
+      let rows = 2;
+      let cols = 2;
+      // single source of truth for tile size (px). Kept in a JS var and exposed to CSS via --cardSize
+      const CARD_SIZE = 160;
+      let turns = [{ img: null, rows: 2, cols: 2 }];
+      let currentTurn = 0;
 
-    function updateTurnIndicator() {
-      document.getElementById('turnNumber').innerText = currentTurn + 1;
-      document.getElementById('totalTurns').innerText = turns.length;
-      renderTurnList();
-    }
+      function updateTurnIndicator() {
+        document.getElementById("turnNumber").innerText = currentTurn + 1;
+        document.getElementById("totalTurns").innerText = turns.length;
+        renderTurnList();
+      }
 
-    function renderTurnList() {
-      const turnList = document.getElementById('turnList');
-      turnList.innerHTML = '';
-      turns.forEach((t, i) => {
-        const item = document.createElement('div');
-        item.className = 'turn-item' + (i === currentTurn ? ' active' : '');
-        item.innerText = i+1;
-        item.title = t.img ? 'Đã upload ảnh.' : 'Chưa có ảnh.';
-        item.tabIndex = 0;
-        item.onclick = () => { currentTurn = i; applyTurn(); };
-        item.onkeydown = (e) => {if(e.key==='Enter'||e.key===' '){currentTurn = i; applyTurn();}};
-        turnList.appendChild(item);
-      });
-    }
+      function renderTurnList() {
+        const turnList = document.getElementById("turnList");
+        turnList.innerHTML = "";
+        turns.forEach((t, i) => {
+          const item = document.createElement("div");
+          item.className = "turn-item" + (i === currentTurn ? " active" : "");
+          item.innerText = i + 1;
+          item.title = t.img ? "Đã upload ảnh." : "Chưa có ảnh.";
+          item.tabIndex = 0;
+          item.onclick = () => {
+            currentTurn = i;
+            applyTurn();
+          };
+          item.onkeydown = (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              currentTurn = i;
+              applyTurn();
+            }
+          };
+          turnList.appendChild(item);
+        });
+      }
 
-    function createGrid() {
-      const gridEl = document.getElementById('grid');
-      rows = turns[currentTurn].rows;
-      cols = turns[currentTurn].cols;
-      gridEl.innerHTML = '';
-      gridEl.style.setProperty('--rows', rows);
-      gridEl.style.setProperty('--cols', cols);
-      // Các dòng sau sẽ cập nhật grid-template-columns/rows = repeat(cols, 85px), luôn fit theo số cột, căn giữa:
-      gridEl.style.gridTemplateColumns = `repeat(${cols}, 160px)`;
-      gridEl.style.gridTemplateRows = `repeat(${rows}, 160px)`;
-      for (let i = 0; i < rows * cols; i++) {
-        const r = Math.floor(i / cols);
-        const c = i % cols;
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.dataset.idx = i;
-        card.innerHTML = `
+      function createGrid() {
+        const gridEl = document.getElementById("grid");
+        rows = turns[currentTurn].rows;
+        cols = turns[currentTurn].cols;
+        gridEl.innerHTML = "";
+        gridEl.style.setProperty("--rows", rows);
+        gridEl.style.setProperty("--cols", cols);
+        // Expose CARD_SIZE to CSS so grid cell size and .card size match exactly
+        gridEl.style.setProperty("--cardSize", CARD_SIZE + "px");
+        for (let i = 0; i < rows * cols; i++) {
+          const r = Math.floor(i / cols);
+          const c = i % cols;
+          const card = document.createElement("div");
+          card.className = "card";
+          card.dataset.idx = i;
+          card.innerHTML = `
           <div class=\"card-inner\">
             <div class=\"card-front\">
-              <span class=\"card-number\">${i+1}</span>
+              <span class=\"card-number\">${i + 1}</span>
               <span>?</span>
             </div>
             <div class=\"card-back\"></div>
           </div>
         `;
-        card.onclick = function () {flipCard(card, r, c)};
-        gridEl.appendChild(card);
+          card.onclick = function () {
+            flipCard(card, r, c);
+          };
+          gridEl.appendChild(card);
+        }
+        if (turns[currentTurn].img) updateAllCards();
       }
-      if(turns[currentTurn].img) updateAllCards();
-    }
 
-    function setBoardSizeForCurrentTurn() {
-      turns[currentTurn].rows = parseInt(document.getElementById('rowInput').value);
-      turns[currentTurn].cols = parseInt(document.getElementById('colInput').value);
-    }
+      function setBoardSizeForCurrentTurn() {
+        turns[currentTurn].rows = parseInt(
+          document.getElementById("rowInput").value
+        );
+        turns[currentTurn].cols = parseInt(
+          document.getElementById("colInput").value
+        );
+      }
 
-    function resetCurrentTurn() {
-      setBoardSizeForCurrentTurn();
-      // Loại class nghiêng nếu còn (fix nghiêng khi tạo lại)
-      const gridEl = document.getElementById('grid');
-      if(gridEl) gridEl.classList.remove('full-image');
-      createGrid();
-      updateTurnIndicator();
-      document.getElementById('imgStatus').textContent = turns[currentTurn].img ? ' Ảnh đã tải lên!' : '';
-      showFullImageIfDone();
-    }
+      function resetCurrentTurn() {
+        setBoardSizeForCurrentTurn();
+        // Loại class nghiêng nếu còn (fix nghiêng khi tạo lại)
+        const gridEl = document.getElementById("grid");
+        if (gridEl) gridEl.classList.remove("full-image");
+        createGrid();
+        updateTurnIndicator();
+        document.getElementById("imgStatus").textContent = turns[currentTurn]
+          .img
+          ? " Ảnh đã tải lên!"
+          : "";
+        showFullImageIfDone();
+      }
 
-    window.uploadImgAll = function(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        turns[currentTurn].img = e.target.result;
-        document.getElementById('imgStatus').textContent = ' Ảnh đã tải lên!';
-        updateAllCards();
+      window.uploadImgAll = function (event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          turns[currentTurn].img = e.target.result;
+          document.getElementById("imgStatus").textContent = " Ảnh đã tải lên!";
+          updateAllCards();
+        };
+        reader.readAsDataURL(file);
       };
-      reader.readAsDataURL(file);
-    };
 
-    function updateAllCards() {
-      const cols = turns[currentTurn].cols;
-      const rows = turns[currentTurn].rows;
-      document.querySelectorAll('.card').forEach((card, i) => {
-        const r = Math.floor(i / cols);
-        const c = i % cols;
-        const back = card.querySelector('.card-back');
-        const img = turns[currentTurn].img;
-        if (img) {
-          back.innerHTML = `<img src='${img}' style="
-            left: -${c * 160}px;
-            top: -${r * 160}px;
-            width: ${cols * 160}px;
-            height: ${rows * 160}px;
+      function updateAllCards() {
+        const cols = turns[currentTurn].cols;
+        const rows = turns[currentTurn].rows;
+        document.querySelectorAll(".card").forEach((card, i) => {
+          const r = Math.floor(i / cols);
+          const c = i % cols;
+          const back = card.querySelector(".card-back");
+          const img = turns[currentTurn].img;
+          if (img) {
+            // Use CARD_SIZE so positioning matches the CSS grid cell size exactly
+            back.innerHTML = `<img src='${img}' style="
+            left: -${c * CARD_SIZE}px;
+            top: -${r * CARD_SIZE}px;
+            width: ${cols * CARD_SIZE}px;
+            height: ${rows * CARD_SIZE}px;
           " alt='Ảnh chung'/>`;
+          } else {
+            back.innerHTML = "";
+          }
+        });
+        document.getElementById("imgStatus").textContent = turns[currentTurn]
+          .img
+          ? " Ảnh đã tải lên!"
+          : "";
+      }
+
+      function checkAllFlipped() {
+        const all = Array.from(document.querySelectorAll(".card"));
+        return (
+          all.length > 0 && all.every((c) => c.classList.contains("flipped"))
+        );
+      }
+
+      function showFullImageIfDone() {
+        const gridEl = document.getElementById("grid");
+        const overlay = document.getElementById("fullImgOverlay");
+        const img = turns[currentTurn].img;
+        if (checkAllFlipped() && img) {
+          // set grid state and show overlay smoothly
+          gridEl.classList.add("full-image");
+          if (overlay) {
+            // update image src (preloaded) then show with RAF to avoid layout thrash
+            const imgEl = overlay.querySelector("img");
+            imgEl.src = img;
+            // ensure next frame applies the visible class
+            requestAnimationFrame(() =>
+              requestAnimationFrame(() => {
+                overlay.classList.add("visible");
+              })
+            );
+          }
         } else {
-          back.innerHTML = '';
+          gridEl.classList.remove("full-image");
+          if (overlay) overlay.classList.remove("visible");
         }
-      });
-      document.getElementById('imgStatus').textContent = turns[currentTurn].img ? ' Ảnh đã tải lên!' : '';
-    }
+      }
 
-    function checkAllFlipped() {
-      const all = Array.from(document.querySelectorAll('.card'));
-      return all.length > 0 && all.every(c => c.classList.contains('flipped'));
-    }
-
-    function showFullImageIfDone() {
-      const gridEl = document.getElementById('grid');
-      const fullOverlay = document.getElementById('fullImgOverlay');
-      const img = turns[currentTurn].img;
-      if (checkAllFlipped() && img) {
-        gridEl.classList.add('full-image');
-        if (!document.getElementById('fullImgOverlay')) {
-          const overlay = document.createElement('div');
-          overlay.className = 'full-overlay';
-          overlay.id = 'fullImgOverlay';
-          overlay.innerHTML = `<img src='${img}' style="width:100%;height:100%;object-fit:cover;">
-          <div class='congrats-text'>🎉 Hoàn thành! <span class='clap'>👏🏻</span></div>`;
-          gridEl.appendChild(overlay);
+      function flipCard(card) {
+        if (!turns[currentTurn].img) {
+          alert("Vui lòng upload ảnh trước!");
+          return;
         }
-      } else {
-        gridEl.classList.remove('full-image');
-        if (fullOverlay) fullOverlay.remove();
+        card.classList.toggle("flipped");
+        // Schedule check for completion after flips stop (debounced) so overlay doesn't pop in mid-flip
+        scheduleShowFullImageIfDone();
       }
-    }
 
-    function flipCard(card) {
-      if (!turns[currentTurn].img) {
-        alert('Vui lòng upload ảnh trước!');
-        return;
+      // Debounced check to show full image only after flips finish
+      let _fullCheckTimeout = null;
+      const FULL_CHECK_DELAY = 820; // slightly longer than card transition (0.7s) to ensure last flip finished
+      function scheduleShowFullImageIfDone() {
+        if (_fullCheckTimeout) clearTimeout(_fullCheckTimeout);
+        _fullCheckTimeout = setTimeout(() => {
+          _fullCheckTimeout = null;
+          showFullImageIfDone();
+        }, FULL_CHECK_DELAY);
       }
-      card.classList.toggle('flipped');
-      // Gọi kiểm tra hoàn thành
-      setTimeout(showFullImageIfDone, 200);
-    }
 
-    function prevTurn() {
-      if (currentTurn > 0) {
-        currentTurn--;
-        applyTurn();
+      // Ensure a single overlay element exists (pre-created to avoid layout thrash when showing)
+      function ensureOverlayExists() {
+        let overlay = document.getElementById("fullImgOverlay");
+        if (!overlay) {
+          overlay = document.createElement("div");
+          overlay.id = "fullImgOverlay";
+          overlay.className = "full-overlay";
+          overlay.innerHTML = `
+            <img src="" alt="Ảnh hoàn chỉnh">
+            
+          `;
+          // append after the grid so it sits visually above
+          const container = document.querySelector(".container");
+          container.appendChild(overlay);
+        }
+        return overlay;
       }
-    }
 
-    function nextTurn() {
-      if (currentTurn === turns.length - 1) {
-        addTurn();
-      } else if (currentTurn < turns.length - 1) {
+      function prevTurn() {
+        if (currentTurn > 0) {
+          currentTurn--;
+          applyTurn();
+        }
+      }
+
+      function nextTurn() {
+        if (currentTurn === turns.length - 1) {
+          addTurn();
+        } else if (currentTurn < turns.length - 1) {
+          currentTurn++;
+          applyTurn();
+        }
+      }
+
+      function addTurn() {
+        const currentInfo = turns[currentTurn];
+        const newTurn = {
+          img: null,
+          rows: currentInfo.rows,
+          cols: currentInfo.cols,
+        };
+        turns.splice(currentTurn + 1, 0, newTurn);
         currentTurn++;
         applyTurn();
       }
-    }
 
-    function addTurn() {
-      const currentInfo = turns[currentTurn];
-      const newTurn = { img: null, rows: currentInfo.rows, cols: currentInfo.cols };
-      turns.splice(currentTurn + 1, 0, newTurn);
-      currentTurn++;
-      applyTurn();
-    }
-
-    function deleteTurn() {
-      if (turns.length <= 1) {
-        alert('Phải giữ ít nhất một lượt!');
-        return;
+      function deleteTurn() {
+        if (turns.length <= 1) {
+          alert("Phải giữ ít nhất một lượt!");
+          return;
+        }
+        turns.splice(currentTurn, 1);
+        if (currentTurn >= turns.length) currentTurn = turns.length - 1;
+        applyTurn();
       }
-      turns.splice(currentTurn, 1);
-      if (currentTurn >= turns.length) currentTurn = turns.length - 1;
-      applyTurn();
-    }
 
-    function applyTurn() {
-      document.getElementById('rowInput').value = turns[currentTurn].rows;
-      document.getElementById('colInput').value = turns[currentTurn].cols;
+      function applyTurn() {
+        document.getElementById("rowInput").value = turns[currentTurn].rows;
+        document.getElementById("colInput").value = turns[currentTurn].cols;
+        createGrid();
+        updateTurnIndicator();
+        document.querySelectorAll(".card").forEach((card) => {
+          card.classList.remove("flipped");
+        });
+        document.getElementById("imgStatus").textContent = turns[currentTurn]
+          .img
+          ? " Ảnh đã tải lên!"
+          : "";
+        showFullImageIfDone();
+      }
+
+      document.getElementById("rowInput").addEventListener("input", () => {
+        setBoardSizeForCurrentTurn();
+        resetCurrentTurn();
+      });
+      document.getElementById("colInput").addEventListener("input", () => {
+        setBoardSizeForCurrentTurn();
+        resetCurrentTurn();
+      });
+
       createGrid();
+      ensureOverlayExists();
       updateTurnIndicator();
-      document.querySelectorAll('.card').forEach(card => { card.classList.remove('flipped'); });
-      document.getElementById('imgStatus').textContent = turns[currentTurn].img ? ' Ảnh đã tải lên!' : '';
-      showFullImageIfDone();
-    }
-
-    document.getElementById('rowInput').addEventListener('input', () => {
-      setBoardSizeForCurrentTurn();
-      resetCurrentTurn();
-    });
-    document.getElementById('colInput').addEventListener('input', () => {
-      setBoardSizeForCurrentTurn();
-      resetCurrentTurn();
-    });
-
-    createGrid();
-    updateTurnIndicator();
-  </script>
-</body>
+    </script>
+  </body>
 </html>
